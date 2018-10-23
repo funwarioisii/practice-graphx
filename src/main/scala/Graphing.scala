@@ -19,7 +19,7 @@ object Graphing {
     *
     */
 
-  val nodes : RDD[(VertexId, String)] =
+  private var defaultNodes : RDD[(VertexId, String)] =
     sc.parallelize(
       Array(
         (310L,"3F1"),
@@ -56,16 +56,16 @@ object Graphing {
   }
 
   // Edgeの生成
-  private val edge: RDD[Edge[(String, Float)]] = sc.parallelize(edgeData)
+  private var defaultEdge: RDD[Edge[(String, Float)]] = sc.parallelize(edgeData)
 
-  private var graph = Graph(nodes, edge)
+  private var defaultGraph = Graph(defaultNodes, defaultEdge)
 
 
-  def getNodes: RDD[(VertexId, String)] = nodes
+  def getNodes: RDD[(VertexId, String)] = defaultNodes
 
-  def getEdges: RDD[Edge[(String, Float)]] = edge
+  def getEdges: RDD[Edge[(String, Float)]] = defaultEdge
 
-  def getGraph: Graph[String, (String, Float)] = graph
+  def getGraph: Graph[String, (String, Float)] = defaultGraph
 
   /**
     * ある地点からある地点へのEdgeのパラメータを返す
@@ -74,7 +74,7 @@ object Graphing {
     * @return
     */
   def getEdgeData(src: VertexId, dst: VertexId): (String, Float) =
-    graph
+    defaultGraph
       .edges
       .filter{
         case Edge(srcId, dstId, (_, _)) =>
@@ -87,10 +87,14 @@ object Graphing {
     * 初期位置から接続可能な場所を返す
     * @return
     */
-  def getCallableNodes: List[Long] = nodes.collect().map{
-    case (id: VertexId, _: String) =>
-      id.toLong
-  }.toList
+  def getCallableNodes: List[Long] =
+    defaultNodes
+      .map{
+        case (id: VertexId, _: String) =>
+          id.toLong
+      }
+      .collect
+      .toList
 
   /**
     * IDから接続可能なノードを返す
@@ -98,7 +102,7 @@ object Graphing {
     * @return
     */
   def getCallableNodes(id: Double): List[Long] =
-    graph
+    defaultGraph
       .edges
       .filter{
         case Edge(srcId, _, _) =>
@@ -112,13 +116,42 @@ object Graphing {
       .toList
 
   def updateProb(src: Long, dst: Long, prob: Float): Unit = {
-    // I couldn't realize update a param of edge, so reset edgedata, edge and assign graph.
+    // I couldn't realize update a param of edge, so reset edge data, edge and assign graph.
     edgeData
-      .filter{case Edge(srcId, dstId, attr) => srcId==src && dstId==dst}
+      .filter{case Edge(srcId, dstId, _) => srcId==src && dstId==dst}
       .foreach(f => f.attr=(f.attr._1, prob))
     val edge: RDD[Edge[(String, Float)]] = sc.parallelize(edgeData)
 
-    graph = Graph(nodes, edge)
+    defaultGraph = Graph(defaultNodes, edge)
+  }
+
+  /**
+    * Graphをカスタマイズ
+    * 正しい配列が渡されるのを期待してる
+    * @param node
+    * @param edge
+    */
+  def setup(node: Array[(Long, String)], edge: Array[(Long, Long)]): Unit = {
+    var edge_ = edge
+
+
+    // 逆方向も追加する
+    edge_ ++= edge_.map{
+      f: (Long, Long) =>
+        (f._2, f._1)
+    }
+
+    // 各Edgeに対するパラメータ
+    // Edge(src, dst, (key, prob))
+    val edgeData = pairs.map{
+      f: (Long, Long) =>
+        Edge(f._1, f._2, (s"${f._1}_to_${f._2}", 0.0f))
+    }
+
+    // Edgeの生成
+    defaultEdge= sc.parallelize(edgeData)
+    defaultNodes = sc.parallelize(node)
+    defaultGraph = Graph(defaultNodes, defaultEdge)
   }
 
 
@@ -130,6 +163,6 @@ object Graphing {
     println(getCallableNodes)
     println(getCallableNodes(310L))
     updateProb(310L, 320L, 0.5f)
-    println(graph.edges.filter(f => f.dstId == 320L && f.srcId==310L).collect().head.attr._2)
+    println(defaultGraph.edges.filter(f => f.dstId == 320L && f.srcId==310L).collect().head.attr._2)
   }
 }
