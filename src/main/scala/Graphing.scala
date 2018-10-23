@@ -4,12 +4,12 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
 object Graphing {
-  val conf = new SparkConf(false)
+  private val conf = new SparkConf(false)
     .setMaster(s"local[1]")
     .setAppName("graph")
     .set("spark.logConf", "true")
 
-  val sc = new SparkContext(conf)
+  private val sc = new SparkContext(conf)
 
   /**
     *
@@ -32,7 +32,7 @@ object Graphing {
     )
 
   // 連結の一方向を表す
-  var pairs =
+  private var pairs =
     Array(
       (310L, 320L),
       (310L, 340L),
