@@ -67,7 +67,13 @@ object Graphing {
 
   def getGraph: Graph[String, (String, Float)] = graph
 
-  def getGraphData(src: VertexId, dst: VertexId): (String, Float) =
+  /**
+    * ある地点からある地点へのEdgeのパラメータを返す
+    * @param src
+    * @param dst
+    * @return
+    */
+  def getEdgeData(src: VertexId, dst: VertexId): (String, Float) =
     graph
       .edges
       .filter{
@@ -87,7 +93,7 @@ object Graphing {
   }.toList
 
   /**
-    * IDから接続可能なノードを返すtw
+    * IDから接続可能なノードを返す
     * @param id
     * @return
     */
@@ -106,6 +112,7 @@ object Graphing {
       .toList
 
   def updateProb(src: Long, dst: Long, prob: Float): Unit = {
+    // I couldn't realize update a param of edge, so reset edgedata, edge and assign graph.
     edgeData
       .filter{case Edge(srcId, dstId, attr) => srcId==src && dstId==dst}
       .foreach(f => f.attr=(f.attr._1, prob))

@@ -6,7 +6,7 @@ class TestGraphing extends FlatSpec with DiagrammedAssertions{
 
 
   "getGraphData" should "グラフからほしいデータを取得できる" in {
-    val mess:String = graphing.getGraphData(src = 310L, dst = 320L)._1
+    val mess:String = graphing.getEdgeData(src = 310L, dst = 320L)._1
 
     assert(mess === "310_to_320")
   }
@@ -23,6 +23,6 @@ class TestGraphing extends FlatSpec with DiagrammedAssertions{
 
   "updateProb" should "EdgeのProbを変えられる" in {
     graphing.updateProb(310L, 320L, 0.8F)
-    assert(graphing.getGraphData(src = 310L, dst = 320L)._2 === 0.8f)
+    assert(graphing.getEdgeData(src = 310L, dst = 320L)._2 === 0.8f)
   }
 }
